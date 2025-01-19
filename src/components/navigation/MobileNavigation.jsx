@@ -1,59 +1,55 @@
+import { Link, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import HamburgerIcon from './HamburgerIcon'
 
 export default function MobileNavigation() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const location = useLocation()
 
-  const menuItems = [
-    { name: 'Form Guide', href: '/form-guide' },
-    { name: 'Winners Circle', href: '/winners-circle' },
-    { name: 'Race Card', href: '/race-card' },
-    { name: 'Gear Changes', href: '/gear-changes' },
-    { name: 'Jockey', href: '/jockey' },
-    { name: 'Mailbag', href: '/mailbag' },
-    { name: 'Create Comp', href: '/create-competition' }
+  const mainNavItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
+    { path: '/competitions', label: 'Competitions', icon: '🏆' },
+    { path: '/tips', label: 'Tips', icon: '📝' },
+    { path: '/profile', label: 'Profile', icon: '👤' }
   ]
 
   return (
-    <div className="lg:hidden">
-      {/* Top Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-black flex items-center justify-between px-4 z-50">
-        <Link to="/">
-          <img src="/qc-logo-white.svg" alt="Quaddie Club" className="h-8" />
-        </Link>
-        
-        <div className="flex items-center gap-4">
-          <Link 
-            to="/create-competition"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
-          >
-            Create Comp
-          </Link>
-          <HamburgerIcon isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
-        </div>
-      </div>
-
-      {/* Slide-out Menu */}
-      <div 
-        className={`
-          fixed top-16 left-0 right-0 bottom-0 bg-black transform transition-transform duration-200 ease-in-out z-40
-          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        `}
-      >
-        <div className="flex flex-col h-[calc(100vh-4rem)] overflow-y-auto pb-20">
-          {menuItems.map((item) => (
+    <>
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 pb-safe-area">
+        <div className="grid grid-cols-4">
+          {mainNavItems.map((item) => (
             <Link
-              key={item.name}
-              to={item.href}
-              onClick={() => setIsOpen(false)}
-              className="px-6 py-4 text-white border-b border-gray-800 hover:bg-gray-900"
+              key={item.path}
+              to={item.path}
+              className={`
+                flex flex-col items-center py-2
+                ${location.pathname === item.path
+                  ? 'text-blue-500'
+                  : 'text-gray-400'
+                }
+              `}
             >
-              {item.name}
+              <span className="text-2xl mb-1">{item.icon}</span>
+              <span className="text-xs">{item.label}</span>
             </Link>
           ))}
         </div>
-      </div>
-    </div>
+      </nav>
+
+      {/* Full Screen Menu (for Tips and other sections) */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            className="fixed inset-0 bg-gray-900 z-50"
+          >
+            {/* Menu content */}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

@@ -1,67 +1,38 @@
-/* Enhance existing animations.css */
-
-/* Smooth page transitions */
-.page-transition-enter {
-  opacity: 0;
-  transform: translateY(20px);
+@keyframes horseshoeRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
+.horseshoe-spin {
+  animation: horseshoeRotate 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.page-transition-exit {
-  opacity: 1;
+@keyframes accordionEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.page-transition-exit-active {
-  opacity: 0;
-  transition: opacity 300ms;
+.accordion-enter {
+  animation: accordionEnter 0.3s ease-out;
 }
 
-/* Micro-interactions */
-.hover-lift {
-  transition: transform 0.2s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-}
-
-.press-effect {
-  transition: transform 0.1s ease;
-}
-
-.press-effect:active {
-  transform: scale(0.98);
-}
-
-/* Loading states */
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.03) 25%,
-    rgba(255, 255, 255, 0.08) 37%,
-    rgba(255, 255, 255, 0.03) 63%
-  );
-  background-size: 400% 100%;
-  animation: shimmer 1.4s ease infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: 100% 50%; }
-  100% { background-position: 0 50%; }
-}
-
-/* Success animations */
-@keyframes checkmark {
-  0% { stroke-dashoffset: 100; }
-  100% { stroke-dashoffset: 0; }
-}
-
-.checkmark {
-  stroke-dasharray: 100;
-  animation: checkmark 0.8s ease-in-out forwards;
+/* Mobile-specific animations */
+@media (max-width: 768px) {
+  .horseshoe-spin {
+    animation-duration: 0.8s;
+  }
+  
+  .accordion-enter {
+    animation-duration: 0.25s;
+  }
 }
