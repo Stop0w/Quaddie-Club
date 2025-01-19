@@ -1,60 +1,20 @@
-import { create } from 'zustand'
-import { validateCredentials } from '../data/dummyUsers'
+// Add these methods to the existing authStore.js
 
-const useAuthStore = create((set, get) => ({
-  // State
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-  verificationEmail: null,
-  registrationData: null,
+{
+  // Add to state
+  resetEmail: null,
+  resetToken: null,
 
-  // Actions
-  login: async (email, password) => {
+  // Add these actions
+  requestPasswordReset: async (email) => {
     set({ isLoading: true, error: null })
     
     try {
       // TODO: Replace with actual API call
-      const user = validateCredentials(email, password)
-      
-      if (!user) {
-        throw new Error('Invalid credentials')
-      }
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       set({ 
-        user, 
-        isAuthenticated: true, 
-        isLoading: false,
-        error: null 
-      })
-      
-      return true
-    } catch (error) {
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
-        isLoading: false,
-        error: error.message 
-      })
-      return false
-    }
-  },
-
-  register: async (userData) => {
-    set({ isLoading: true, error: null })
-    
-    try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      // Store registration data temporarily
-      set({ 
-        registrationData: userData,
-        verificationEmail: userData.email,
+        resetEmail: email,
         isLoading: false 
       })
       
@@ -68,31 +28,16 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  verifyEmail: async (code) => {
+  verifyResetCode: async (code) => {
     set({ isLoading: true, error: null })
     
     try {
       // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // For demo, accept any 6-digit code
-      if (!/^\d{6}$/.test(code)) {
-        throw new Error('Invalid verification code')
-      }
-      
-      const { registrationData } = get()
-      
-      // Create user account
       set({ 
-        user: {
-          ...registrationData,
-          id: `u${Date.now()}`, // Generate temporary ID
-          isVerified: true
-        },
-        isAuthenticated: true,
-        isLoading: false,
-        registrationData: null,
-        verificationEmail: null
+        resetToken: code,
+        isLoading: false 
       })
       
       return true
@@ -105,14 +50,20 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  resendVerification: async () => {
+  resetPassword: async (newPassword) => {
+    const { resetEmail, resetToken } = get()
     set({ isLoading: true, error: null })
     
     try {
       // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      set({ isLoading: false })
+      set({ 
+        resetEmail: null,
+        resetToken: null,
+        isLoading: false 
+      })
+      
       return true
     } catch (error) {
       set({ 
@@ -121,21 +72,5 @@ const useAuthStore = create((set, get) => ({
       })
       return false
     }
-  },
-
-  logout: () => {
-    set({ 
-      user: null, 
-      isAuthenticated: false,
-      error: null,
-      registrationData: null,
-      verificationEmail: null
-    })
-  },
-
-  clearError: () => {
-    set({ error: null })
   }
-}))
-
-export default useAuthStore
+}

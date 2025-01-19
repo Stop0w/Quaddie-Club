@@ -1,82 +1,148 @@
-import { create } from 'zustand'
-import { cacheManager } from '../utils/cacheManager'
+// Add these methods to the existing competitionStore.js
 
-const useCompetitionStore = create((set, get) => ({
-  // State
-  competitions: [],
-  activeCompetition: null,
-  updates: [],
-  isLoading: false,
-  error: null,
-  lastUpdate: null,
+{
+  // Add to state
+  joinRequests: [],
+  invitations: [],
 
-  // Actions
-  setActiveCompetition: (competitionId) => {
-    const competition = get().competitions.find(c => c.id === competitionId)
-    set({ activeCompetition: competition })
-  },
-
-  updateCompetitionState: async (competitionId, update) => {
-    set(state => ({
-      competitions: state.competitions.map(comp => 
-        comp.id === competitionId 
-          ? { ...comp, ...update, lastUpdated: new Date().toISOString() }
-          : comp
-      ),
-      updates: [
-        { 
-          id: Date.now(),
-          competitionId,
-          type: 'UPDATE',
-          data: update,
-          timestamp: new Date().toISOString()
-        },
-        ...state.updates.slice(0, 49) // Keep last 50 updates
-      ]
-    }))
-
-    // Cache updated state
-    await cacheManager.set(`competition-${competitionId}`, update)
-  },
-
-  subscribeToUpdates: (competitionId) => {
-    // WebSocket connection would go here in production
-    const interval = setInterval(() => {
-      // Simulate real-time updates
-      const randomUpdate = {
-        odds: Math.random() * 10 + 1,
-        participants: Math.floor(Math.random() * 100),
-        status: Math.random() > 0.8 ? 'closed' : 'open'
-      }
-      get().updateCompetitionState(competitionId, randomUpdate)
-    }, 30000) // Every 30 seconds
-
-    return () => clearInterval(interval)
-  },
-
-  fetchCompetitionUpdates: async (competitionId) => {
+  // Add these actions
+  joinCompetition: async (competitionId, paymentDetails = null) => {
     set({ isLoading: true, error: null })
     
     try {
-      // In production, this would be an API call
-      const cached = cacheManager.get(`competition-${competitionId}`)
-      if (cached) {
+      const competition = get().getCompetition(competitionId)
+      if (!competition) throw new Error('Competition not found')
+
+      // Check if competition requires approval
+      if (competition.requiresApproval) {
+        // Add to join requests
+        const request = {
+          id: `req_${Date.now()}`,
+          competitionId,
+          userId: 'current_user', // Replace with actual user ID
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        }
+
         set(state => ({
-          competitions: state.competitions.map(comp =>
-            comp.id === competitionId
-              ? { ...comp, ...cached }
-              : comp
-          )
+          joinRequests: [...state.joinRequests, request],
+          isLoading: false
         }))
+
+        return request
       }
-      
-      set({ lastUpdate: new Date().toISOString() })
+
+      // Process payment if required
+      if (competition.entryFee > 0 && paymentDetails) {
+        // TODO: Process payment
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      // Add user to competition
+      set(state => ({
+        competitions: state.competitions.map(comp =>
+          comp.id === competitionId
+            ? {
+                ...comp,
+                participants: [...comp.participants, 'current_user'] // Replace with actual user ID
+              }
+            : comp
+        ),
+        isLoading: false
+      }))
+
+      return true
     } catch (error) {
-      set({ error: error.message })
-    } finally {
-      set({ isLoading: false })
+      set({ 
+        error: error.message,
+        isLoading: false
+      })
+      throw error
+    }
+  },
+
+  sendInvitation: async (competitionId, userId) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      const invitation = {
+        id: `inv_${Date.now()}`,
+        competitionId,
+        userId,
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      }
+
+      set(state => ({
+        invitations: [...state.invitations, invitation],
+        isLoading: false
+      }))
+
+      return invitation
+    } catch (error) {
+      set({ 
+        error: error.message,
+        isLoading: false
+      })
+      throw error
+    }
+  },
+
+  respondToInvitation: async (invitationId, accept) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      set(state => ({
+        invitations: state.invitations.map(inv =>
+          inv.id === invitationId
+            ? { ...inv, status: accept ? 'accepted' : 'declined' }
+            : inv
+        ),
+        isLoading: false
+      }))
+
+      if (accept) {
+        const invitation = get().invitations.find(inv => inv.id === invitationId)
+        if (invitation) {
+          await get().joinCompetition(invitation.competitionId)
+        }
+      }
+
+      return true
+    } catch (error) {
+      set({ 
+        error: error.message,
+        isLoading: false
+      })
+      throw error
+    }
+  },
+
+  approveJoinRequest: async (requestId) => {
+    set({ isLoading: true, error: null })
+
+    try {
+      const request = get().joinRequests.find(req => req.id === requestId)
+      if (!request) throw new Error('Join request not found')
+
+      await get().joinCompetition(request.competitionId)
+
+      set(state => ({
+        joinRequests: state.joinRequests.map(req =>
+          req.id === requestId
+            ? { ...req, status: 'approved' }
+            : req
+        ),
+        isLoading: false
+      }))
+
+      return true
+    } catch (error) {
+      set({ 
+        error: error.message,
+        isLoading: false
+      })
+      throw error
     }
   }
-}))
-
-export default useCompetitionStore
+}
