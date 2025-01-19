@@ -1,99 +1,103 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
+import UserMenuDropdown from './UserMenuDropdown'
 
 export default function Navigation() {
-  const location = useLocation()
-  const { user, isAuthenticated } = useAuthStore()
-  
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', private: true },
-    { name: 'Competitions', href: '/competitions', private: true },
-    { name: 'Tips', href: '/tips', private: true },
-    { name: 'Leaderboard', href: '/leaderboard', private: true },
-    { name: 'Social', href: '/social', private: true },
-    { name: 'Support', href: '/support', private: false }
-  ]
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const { isAuthenticated } = useAuthStore()
+  const navigate = useNavigate()
 
-  // Add admin routes if user is admin
-  if (user?.role === 'admin') {
-    navigation.push({ name: 'Management Hub', href: '/management-hub', private: true })
-  }
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
-  const isActive = (path) => location.pathname === path
+  const UnauthenticatedMenuItems = () => (
+    <div className="menu-items">
+      <Link to="/free-tips" className="nav-link">Free Tips</Link>
+      <Link to="/how-it-works" className="nav-link">How It Works</Link>
+      <Link to="/leaderboard-preview" className="nav-link">Leaderboard Preview</Link>
+      <Link to="/demo-competition" className="nav-link">Demo Competition</Link>
+    </div>
+  )
+
+  const AuthenticatedMenuItems = () => (
+    <div className="menu-items">
+      <Link to="/form-guide" className="nav-link">Form Guide</Link>
+      <Link to="/mailbag" className="nav-link">Mailbag</Link>
+    </div>
+  )
+
+  const MobileMenuItems = () => (
+    <div className="mobile-menu-items">
+      {isAuthenticated ? (
+        <>
+          <Link to="/form-guide" onClick={() => setIsMobileMenuOpen(false)}>Form Guide</Link>
+          <Link to="/competitions" onClick={() => setIsMobileMenuOpen(false)}>Competitions</Link>
+          <Link to="/tips" onClick={() => setIsMobileMenuOpen(false)}>Tips</Link>
+          <Link to="/mailbag" onClick={() => setIsMobileMenuOpen(false)}>Mailbag</Link>
+          <Link to="/more" onClick={() => setIsMobileMenuOpen(false)}>More</Link>
+        </>
+      ) : (
+        <>
+          <Link to="/free-tips" onClick={() => setIsMobileMenuOpen(false)}>Free Tips</Link>
+          <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)}>How It Works</Link>
+          <Link to="/leaderboard-preview" onClick={() => setIsMobileMenuOpen(false)}>Leaderboard Preview</Link>
+          <Link to="/demo-competition" onClick={() => setIsMobileMenuOpen(false)}>Demo Competition</Link>
+          <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>Login</Link>
+          <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>Sign Up</Link>
+        </>
+      )}
+    </div>
+  )
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-xl font-bold text-primary-600">
-                Quaddie Challenge
-              </Link>
-            </div>
-            
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navigation.map((item) => (
-                (!item.private || isAuthenticated) && (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`
-                      inline-flex items-center px-1 pt-1 text-sm font-medium
-                      ${isActive(item.href)
-                        ? 'border-b-2 border-primary-500 text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                      }
-                    `}
-                  >
-                    {item.name}
-                  </Link>
-                )
-              ))}
-            </div>
+    <nav className="navigation bg-black">
+      <div className="nav-left">
+        <Link to="/">
+          <img src="/qc-logo-white.svg" alt="Quaddie Club Logo" className="logo" />
+        </Link>
+        {!isMobile && (
+          <div className="desktop-menu">
+            {isAuthenticated ? <AuthenticatedMenuItems /> : <UnauthenticatedMenuItems />}
           </div>
-
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/profile"
-                  className={`
-                    text-sm font-medium
-                    ${isActive('/profile')
-                      ? 'text-gray-900 dark:text-white'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }
-                  `}
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={() => useAuthStore.getState().logout()}
-                  className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
+      <div className="nav-right">
+        {!isMobile && (
+          <>
+            {isAuthenticated ? (
+              <>
+                <Link to="/create-competition" className="create-comp-button">
+                  Create Comp
+                </Link>
+                <UserMenuDropdown />
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="nav-link">Login</Link>
+                <Link to="/signup" className="nav-link">Sign Up</Link>
+              </>
+            )}
+          </>
+        )}
+        {isMobile && (
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className={`mobile-menu-toggle ${isMobileMenuOpen ? 'open' : ''}`}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        )}
+      </div>
+      {isMobile && isMobileMenuOpen && <MobileMenuItems />}
     </nav>
   )
 }
